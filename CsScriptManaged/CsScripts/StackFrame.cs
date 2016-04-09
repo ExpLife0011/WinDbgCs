@@ -1,6 +1,6 @@
 ﻿using CsScriptManaged;
 using CsScriptManaged.Utility;
-using DbgEngManaged;
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 
 namespace CsScripts
@@ -13,7 +13,7 @@ namespace CsScripts
         /// <summary>
         /// The frame
         /// </summary>
-        private _DEBUG_STACK_FRAME_EX frame;
+        private DEBUG_STACK_FRAME_EX frame;
 
         /// <summary>
         /// The source file name, line and displacement
@@ -51,7 +51,7 @@ namespace CsScripts
         /// <param name="stackTrace">The stack trace.</param>
         /// <param name="frame">The frame.</param>
         /// <param name="frameContext">The frame context.</param>
-        internal StackFrame(StackTrace stackTrace, _DEBUG_STACK_FRAME_EX frame, ThreadContext frameContext)
+        internal StackFrame(StackTrace stackTrace, DEBUG_STACK_FRAME_EX frame, ThreadContext frameContext)
         {
             StackTrace = stackTrace;
             FrameContext = frameContext;

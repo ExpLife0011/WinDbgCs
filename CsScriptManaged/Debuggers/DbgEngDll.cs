@@ -4,7 +4,7 @@ using CsScriptManaged.Native;
 using CsScriptManaged.SymbolProviders;
 using CsScriptManaged.Utility;
 using CsScripts;
-using DbgEngManaged;
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -43,13 +43,13 @@ namespace CsScriptManaged.Debuggers
         /// The DbgEng.dll Client interface
         /// </summary>
         [ThreadStatic]
-        private static IDebugClient7 client;
+        private static IDebugClient6 client;
 
         /// <summary>
         /// The DbgEng.dll Control interface
         /// </summary>
         [ThreadStatic]
-        private static IDebugControl7 control;
+        private static IDebugControl6 control;
 
         /// <summary>
         /// The DbgEng.dll Data spaces interface
@@ -73,7 +73,7 @@ namespace CsScriptManaged.Debuggers
         /// The DbgEng.dll System objects interface
         /// </summary>
         [ThreadStatic]
-        private static IDebugSystemObjects4 systemObjects;
+        private static IDebugSystemObjects3 systemObjects;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DbgEngDll"/> class.
@@ -155,13 +155,13 @@ namespace CsScriptManaged.Debuggers
         /// <summary>
         /// The DbgEng.dll Client interface
         /// </summary>
-        internal IDebugClient7 Client
+        internal IDebugClient6 Client
         {
             get
             {
                 if (client == null)
                 {
-                    client = ThreadClient as IDebugClient7;
+                    client = ThreadClient as IDebugClient6;
                 }
 
                 return client;
@@ -171,13 +171,13 @@ namespace CsScriptManaged.Debuggers
         /// <summary>
         /// The DbgEng.dll Control interface
         /// </summary>
-        internal IDebugControl7 Control
+        internal IDebugControl6 Control
         {
             get
             {
                 if (control == null)
                 {
-                    control = ThreadClient as IDebugControl7;
+                    control = ThreadClient as IDebugControl6;
                 }
 
                 return control;
@@ -235,13 +235,13 @@ namespace CsScriptManaged.Debuggers
         /// <summary>
         /// The DbgEng.dll System objects interface
         /// </summary>
-        internal IDebugSystemObjects4 SystemObjects
+        internal IDebugSystemObjects3 SystemObjects
         {
             get
             {
                 if (systemObjects == null)
                 {
-                    systemObjects = ThreadClient as IDebugSystemObjects4;
+                    systemObjects = ThreadClient as IDebugSystemObjects3;
                 }
 
                 return systemObjects;
@@ -257,7 +257,7 @@ namespace CsScriptManaged.Debuggers
         {
             command = string.Join(" ", command, string.Join(" ", parameters));
             StateCache.SyncState();
-            Control.Execute((uint)DebugOutctl.ThisClient, command, (uint)(DebugExecute.NotLogged_ | DebugExecute.NoRepeat));
+            Control.Execute(DEBUG_OUTCTL.THIS_CLIENT, command, DEBUG_EXECUTE.NOT_LOGGED | DEBUG_EXECUTE.NO_REPEAT);
         }
 
         /// <summary>
@@ -318,22 +318,11 @@ namespace CsScriptManaged.Debuggers
         {
             using (ProcessSwitcher switcher = new ProcessSwitcher(StateCache, process))
             {
-                IntPtr buffer = Marshal.AllocHGlobal((int)size);
+                byte[] buffer = new byte[size];
                 uint read;
 
-                try
-                {
-                    DataSpaces.ReadVirtual(address, buffer, size, out read);
-
-                    byte[] bytes = new byte[size];
-
-                    Marshal.Copy(buffer, bytes, 0, (int)size);
-                    return new MemoryBuffer(bytes);
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
+                DataSpaces.ReadVirtual(address, buffer, size, out read);
+                return new MemoryBuffer(buffer);
             }
         }
 
@@ -344,7 +333,7 @@ namespace CsScriptManaged.Debuggers
         /// <param name="module">The module.</param>
         public string GetModuleName(Module module)
         {
-            return GetModuleName(module, DebugModname.Module);
+            return GetModuleName(module, DEBUG_MODNAME.MODULE);
         }
 
         /// <summary>
@@ -354,7 +343,7 @@ namespace CsScriptManaged.Debuggers
         /// <param name="module">The module.</param>
         public string GetModuleImageName(Module module)
         {
-            return GetModuleName(module, DebugModname.Image);
+            return GetModuleName(module, DEBUG_MODNAME.IMAGE);
         }
 
         /// <summary>
@@ -363,7 +352,7 @@ namespace CsScriptManaged.Debuggers
         /// <param name="module">The module.</param>
         public string GetModuleLoadedImage(Module module)
         {
-            return GetModuleName(module, DebugModname.LoadedImage);
+            return GetModuleName(module, DEBUG_MODNAME.LOADED_IMAGE);
         }
 
         /// <summary>
@@ -373,7 +362,7 @@ namespace CsScriptManaged.Debuggers
         /// <param name="module">The module.</param>
         public string GetModuleSymbolFile(Module module)
         {
-            return GetModuleName(module, DebugModname.SymbolFile);
+            return GetModuleName(module, DEBUG_MODNAME.SYMBOL_FILE);
         }
 
         /// <summary>
@@ -383,7 +372,7 @@ namespace CsScriptManaged.Debuggers
         /// <param name="module">The module.</param>
         public string GetModuleMappedImage(Module module)
         {
-            return GetModuleName(module, DebugModname.MappedImage);
+            return GetModuleName(module, DEBUG_MODNAME.MAPPED_IMAGE);
         }
 
         /// <summary>
@@ -392,14 +381,14 @@ namespace CsScriptManaged.Debuggers
         /// <param name="module">The module.</param>
         /// <param name="modname">The type of module name.</param>
         /// <returns>Read name</returns>
-        private string GetModuleName(Module module, DebugModname modname)
+        private string GetModuleName(Module module, DEBUG_MODNAME modname)
         {
             using (ProcessSwitcher switcher = new ProcessSwitcher(StateCache, module.Process))
             {
                 uint nameSize;
                 StringBuilder sb = new StringBuilder(Constants.MaxFileName);
 
-                Symbols.GetModuleNameStringWide((uint)modname, 0xffffffff, module.Address, sb, (uint)sb.Capacity, out nameSize);
+                Symbols.GetModuleNameStringWide(modname, 0xffffffff, module.Address, sb, sb.Capacity, out nameSize);
                 return sb.ToString();
             }
         }
@@ -430,7 +419,7 @@ namespace CsScriptManaged.Debuggers
             uint inputSize;
             StringBuilder sb = new StringBuilder(10240);
 
-            Control.InputWide(sb, (uint)sb.Capacity, out inputSize);
+            Control.InputWide(sb, sb.Capacity, out inputSize);
             return sb.ToString();
         }
 
@@ -591,28 +580,26 @@ namespace CsScriptManaged.Debuggers
         /// <param name="contextAddress">The context address.</param>
         private StackTrace ReadStackTraceFromContext(Thread thread, IntPtr contextAddress)
         {
-            List<_DEBUG_STACK_FRAME_EX> frames = new List<_DEBUG_STACK_FRAME_EX>();
+            List<DEBUG_STACK_FRAME_EX> frames = new List<DEBUG_STACK_FRAME_EX>();
             List<ThreadContext> contexts = new List<ThreadContext>();
             STACKFRAME_EX stackFrame = new STACKFRAME_EX();
 
             while (true)
             {
-                if (!StackWalkEx(thread.Process.ActualProcessorType, (IntPtr)thread.Process.SystemId, (IntPtr)thread.SystemId, ref stackFrame, contextAddress, ReadMemory, GetFunctionTableAccess, GetModuleBaseAddress, null, 0))
+                if (!StackWalkEx((IMAGE_FILE_MACHINE)thread.Process.ActualProcessorType, (IntPtr)thread.Process.SystemId, (IntPtr)thread.SystemId, ref stackFrame, contextAddress, ReadMemory, GetFunctionTableAccess, GetModuleBaseAddress, null, 0))
                     break;
 
-                frames.Add(new _DEBUG_STACK_FRAME_EX()
+                frames.Add(new DEBUG_STACK_FRAME_EX()
                 {
                     FrameNumber = (uint)frames.Count,
                     FrameOffset = stackFrame.AddrFrame.Offset,
                     FuncTableEntry = (ulong)stackFrame.FuncTableEntry.ToInt64(),
                     InlineFrameContext = stackFrame.InlineFrameContext,
                     InstructionOffset = stackFrame.AddrPC.Offset,
-                    Params = null,
-                    Reserved = null,
                     Reserved1 = 0,
                     ReturnOffset = stackFrame.AddrReturn.Offset,
                     StackOffset = stackFrame.AddrStack.Offset,
-                    Virtual = stackFrame.Virtual,
+                    Virtual = (uint)stackFrame.Virtual,
                 });
                 contexts.Add(ThreadContext.PtrToStructure(contextAddress));
             }
@@ -649,7 +636,7 @@ namespace CsScriptManaged.Debuggers
 
             const int MaxCallStack = 10240;
             using (ThreadSwitcher switcher = new ThreadSwitcher(StateCache, thread))
-            using (MarshalArrayReader<_DEBUG_STACK_FRAME_EX> frameBuffer = new RegularMarshalArrayReader<_DEBUG_STACK_FRAME_EX>(MaxCallStack))
+            using (MarshalArrayReader<DEBUG_STACK_FRAME_EX> frameBuffer = new RegularMarshalArrayReader<DEBUG_STACK_FRAME_EX>(MaxCallStack))
             using (MarshalArrayReader<ThreadContext> threadContextBuffer = ThreadContext.CreateArrayMarshaler(MaxCallStack))
             {
                 uint framesCount;
@@ -728,7 +715,7 @@ namespace CsScriptManaged.Debuggers
                     uint nameSize, type;
                     ulong handle;
 
-                    Client.GetDumpFileWide(0, sb, (uint)sb.Capacity, out nameSize, out handle, out type);
+                    Client.GetDumpFileWide(0, sb, sb.Capacity, out nameSize, out handle, out type);
                     return sb.ToString();
                 }
 
@@ -773,15 +760,7 @@ namespace CsScriptManaged.Debuggers
                 uint[] threadIds = new uint[threadCount];
                 uint[] threadSytemIds = new uint[threadCount];
 
-                unsafe
-                {
-                    fixed (uint* ids = &threadIds[0])
-                    fixed (uint* systemIds = &threadSytemIds[0])
-                    {
-                        SystemObjects.GetThreadIdsByIndex(0, threadCount, out *ids, out *systemIds);
-                    }
-                }
-
+                SystemObjects.GetThreadIdsByIndex(0, threadCount, threadIds, threadSytemIds);
                 for (uint i = 0; i < threadCount; i++)
                 {
                     threads[i] = new Thread(threadIds[i], threadSytemIds[i], process);
@@ -842,15 +821,7 @@ namespace CsScriptManaged.Debuggers
             uint[] processIds = new uint[processCount];
             uint[] processSytemIds = new uint[processCount];
 
-            unsafe
-            {
-                fixed (uint* ids = &processIds[0])
-                fixed (uint* systemIds = &processSytemIds[0])
-                {
-                    SystemObjects.GetProcessIdsByIndex(0, processCount, out *ids, out *systemIds);
-                }
-            }
-
+            SystemObjects.GetProcessIdsByIndex(0, processCount, processIds, processSytemIds);
             for (uint i = 0; i < processCount; i++)
             {
                 processes[i] = GlobalCache.Processes[processIds[i]];
@@ -953,8 +924,8 @@ namespace CsScriptManaged.Debuggers
             TextWriter originalConsoleOut = Console.Out;
             TextWriter originalConsoleError = Console.Error;
 
-            Console.SetOut(new DebuggerTextWriter(this, DebugOutput.Normal));
-            Console.SetError(new DebuggerTextWriter(this, DebugOutput.Error));
+            Console.SetOut(new DebuggerTextWriter(this, DEBUG_OUTPUT.NORMAL));
+            Console.SetError(new DebuggerTextWriter(this, DEBUG_OUTPUT.ERROR));
             try
             {
                 action();
@@ -1248,7 +1219,7 @@ namespace CsScriptManaged.Debuggers
         /// <returns>If the function succeeds, the return value is TRUE.</returns>
         [DllImport("dbghelp.dll", SetLastError = true)]
         private static extern bool StackWalkEx(
-            ImageFileMachine MachineType,
+            IMAGE_FILE_MACHINE MachineType,
             IntPtr hProcess,
             IntPtr hThread,
             ref STACKFRAME_EX StackFrame,

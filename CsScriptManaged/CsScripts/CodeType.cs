@@ -4,6 +4,7 @@ using CsScriptManaged.Utility;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.Diagnostics.Runtime.Interop;
 
 namespace CsScripts
 {

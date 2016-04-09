@@ -5,6 +5,7 @@ using Dia2Lib;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using Microsoft.Diagnostics.Runtime.Interop;
 
 namespace CsScriptManaged.SymbolProviders
 {

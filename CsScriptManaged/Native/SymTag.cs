@@ -1,4 +1,5 @@
-﻿namespace CsScriptManaged.Native
+﻿#if false
+namespace CsScriptManaged.Native
 {
     /// <summary>
     /// Specifies the type of symbol.
@@ -221,3 +222,4 @@
         Max,
     }
 }
+#endif

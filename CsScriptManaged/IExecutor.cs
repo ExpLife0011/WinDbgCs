@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Microsoft.Diagnostics.Runtime.Interop;
+using System;
 using System.Runtime.InteropServices;
-using DbgEngManaged;
 
 namespace CsScriptManaged
 {

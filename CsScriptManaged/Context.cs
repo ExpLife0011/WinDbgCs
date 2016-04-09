@@ -1,7 +1,7 @@
 ﻿using CsScriptManaged.Debuggers;
 using CsScriptManaged.SymbolProviders;
 using CsScriptManaged.UI;
-using DbgEngManaged;
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 using System.IO;
 using System.Reflection;

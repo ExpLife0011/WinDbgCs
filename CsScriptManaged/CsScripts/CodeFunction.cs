@@ -1,6 +1,7 @@
 ﻿using CsScriptManaged;
 using CsScriptManaged.Native;
 using CsScriptManaged.Utility;
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 
 namespace CsScripts

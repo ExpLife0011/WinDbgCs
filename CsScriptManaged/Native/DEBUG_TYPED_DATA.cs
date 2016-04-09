@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using Microsoft.Diagnostics.Runtime.Interop;
+using System.Runtime.InteropServices;
 
 namespace CsScriptManaged.Native
 {

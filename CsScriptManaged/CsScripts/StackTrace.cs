@@ -1,5 +1,5 @@
 ﻿using CsScriptManaged;
-using DbgEngManaged;
+using Microsoft.Diagnostics.Runtime.Interop;
 
 namespace CsScripts
 {
@@ -14,7 +14,7 @@ namespace CsScripts
         /// <param name="thread">The thread.</param>
         /// <param name="frames">The frames.</param>
         /// <param name="frameContexts">The frame contexts.</param>
-        internal StackTrace(Thread thread, _DEBUG_STACK_FRAME_EX[] frames, ThreadContext[] frameContexts)
+        internal StackTrace(Thread thread, DEBUG_STACK_FRAME_EX[] frames, ThreadContext[] frameContexts)
         {
             Thread = thread;
             Frames = new StackFrame[frames.Length];

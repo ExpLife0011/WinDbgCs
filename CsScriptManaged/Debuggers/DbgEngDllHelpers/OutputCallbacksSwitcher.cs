@@ -1,5 +1,5 @@
 ﻿using CsScriptManaged.Utility;
-using DbgEngManaged;
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 
 namespace CsScriptManaged.Debuggers.DbgEngDllHelpers

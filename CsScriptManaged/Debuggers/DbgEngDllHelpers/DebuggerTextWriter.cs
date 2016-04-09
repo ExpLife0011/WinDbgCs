@@ -1,4 +1,4 @@
-﻿using DbgEngManaged;
+﻿using Microsoft.Diagnostics.Runtime.Interop;
 using System.IO;
 using System.Text;
 
@@ -24,7 +24,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
         /// </summary>
         /// <param name="dbgEngDll">The DbgEngDll debugger engine.</param>
         /// <param name="outputType">Type of the output.</param>
-        public DebuggerTextWriter(DbgEngDll dbgEngDll, DebugOutput outputType)
+        public DebuggerTextWriter(DbgEngDll dbgEngDll, DEBUG_OUTPUT outputType)
         {
             OutputType = outputType;
             outputCallbacksWide = dbgEngDll.Client.GetOutputCallbacksWide();
@@ -34,7 +34,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
         /// <summary>
         /// Gets or sets the type of the output.
         /// </summary>
-        public DebugOutput OutputType { get; set; }
+        public DEBUG_OUTPUT OutputType { get; set; }
 
         /// <summary>
         /// When overridden in a derived class, returns the character encoding in which the output is written.
@@ -55,11 +55,11 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
         {
             if (outputCallbacksWide != null)
             {
-                outputCallbacksWide.Output((uint)OutputType, value.ToString());
+                outputCallbacksWide.Output(OutputType, value.ToString());
             }
             else if (outputCallbacks != null)
             {
-                outputCallbacks.Output((uint)OutputType, value.ToString());
+                outputCallbacks.Output(OutputType, value.ToString());
             }
         }
 
@@ -71,11 +71,11 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
         {
             if (outputCallbacksWide != null)
             {
-                outputCallbacksWide.Output((uint)OutputType, value);
+                outputCallbacksWide.Output(OutputType, value);
             }
             else if (outputCallbacks != null)
             {
-                outputCallbacks.Output((uint)OutputType, value);
+                outputCallbacks.Output(OutputType, value);
             }
         }
 

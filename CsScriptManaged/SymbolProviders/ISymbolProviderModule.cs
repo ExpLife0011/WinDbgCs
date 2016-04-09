@@ -1,6 +1,7 @@
 ﻿using CsScriptManaged.Native;
 using CsScripts;
 using Dia2Lib;
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 using System.Collections.Generic;
 

@@ -1,9 +1,8 @@
-﻿using CsScriptManaged.Native;
-using CsScriptManaged.SymbolProviders;
+﻿using CsScriptManaged.SymbolProviders;
 using CsScriptManaged.Utility;
 using CsScripts;
-using DbgEngManaged;
 using Dia2Lib;
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,7 +22,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
         /// <summary>
         /// The typed data
         /// </summary>
-        private static DictionaryCache<Tuple<ulong, uint, ulong>, DEBUG_TYPED_DATA> typedData = new DictionaryCache<Tuple<ulong, uint, ulong>, DEBUG_TYPED_DATA>(GetTypedData);
+        private static DictionaryCache<Tuple<ulong, uint, ulong>, _DEBUG_TYPED_DATA> typedData = new DictionaryCache<Tuple<ulong, uint, ulong>, _DEBUG_TYPED_DATA>(GetTypedData);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DbgEngSymbolProvider"/> class.
@@ -78,9 +77,9 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
             {
                 var typedData = DbgEngSymbolProvider.typedData[Tuple.Create(module.Address, typeId, module.Process.PEB)];
                 typedData.Data = module.Process.PEB;
-                var result = dbgEngDll.Advanced.Request(DebugRequest.ExtTypedDataAnsi, new EXT_TYPED_DATA()
+                var result = dbgEngDll.Advanced.Request(DEBUG_REQUEST.EXT_TYPED_DATA_ANSI, new EXT_TYPED_DATA()
                 {
-                    Operation = ExtTdop.GetDereference,
+                    Operation = _EXT_TDOP.EXT_TDOP_GET_DEREFERENCE,
                     InData = typedData,
                 }).OutData.TypeId;
 
@@ -99,9 +98,9 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
             {
                 var typedData = DbgEngSymbolProvider.typedData[Tuple.Create(module.Address, typeId, module.Process.PEB)];
                 typedData.Data = module.Process.PEB;
-                var result = dbgEngDll.Advanced.Request(DebugRequest.ExtTypedDataAnsi, new EXT_TYPED_DATA()
+                var result = dbgEngDll.Advanced.Request(DEBUG_REQUEST.EXT_TYPED_DATA_ANSI, new EXT_TYPED_DATA()
                 {
-                    Operation = ExtTdop.GetPointerTo,
+                    Operation = _EXT_TDOP.EXT_TDOP_GET_POINTER_TO,
                     InData = typedData,
                 }).OutData.TypeId;
 
@@ -127,7 +126,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                     {
                         StringBuilder sb = new StringBuilder(Constants.MaxSymbolName);
 
-                        dbgEngDll.Symbols.GetFieldName(module.Address, typeId, fieldIndex, sb, (uint)sb.Capacity, out nameSize);
+                        dbgEngDll.Symbols.GetFieldName(module.Address, typeId, fieldIndex, sb, sb.Capacity, out nameSize);
                         fields.Add(sb.ToString());
                     }
                 }
@@ -175,7 +174,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                 uint nameSize;
                 StringBuilder sb = new StringBuilder(Constants.MaxSymbolName);
 
-                dbgEngDll.Symbols.GetTypeName(module.Address, typeId, sb, (uint)sb.Capacity, out nameSize);
+                dbgEngDll.Symbols.GetTypeName(module.Address, typeId, sb, sb.Capacity, out nameSize);
                 return sb.ToString();
             }
         }
@@ -233,7 +232,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                 uint fileNameLength;
                 StringBuilder sb = new StringBuilder(Constants.MaxFileName);
 
-                dbgEngDll.Symbols.GetLineByOffset(stackFrame.InstructionOffset, out sourceFileLine, sb, (uint)sb.Capacity, out fileNameLength, out displacement);
+                dbgEngDll.Symbols.GetLineByOffset(stackFrame.InstructionOffset, out sourceFileLine, sb, sb.Capacity, out fileNameLength, out displacement);
                 sourceFileName = sb.ToString();
             }
         }
@@ -251,7 +250,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                 uint functionNameSize;
                 StringBuilder sb = new StringBuilder(Constants.MaxSymbolName);
 
-                dbgEngDll.Symbols.GetNameByOffset(stackFrame.InstructionOffset, sb, (uint)sb.Capacity, out functionNameSize, out displacement);
+                dbgEngDll.Symbols.GetNameByOffset(stackFrame.InstructionOffset, sb, sb.Capacity, out functionNameSize, out displacement);
                 functionName = sb.ToString();
             }
         }
@@ -271,7 +270,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                 uint fileNameLength;
                 StringBuilder sb = new StringBuilder(Constants.MaxFileName);
 
-                dbgEngDll.Symbols.GetLineByOffset(address, out sourceFileLine, sb, (uint)sb.Capacity, out fileNameLength, out displacement);
+                dbgEngDll.Symbols.GetLineByOffset(address, out sourceFileLine, sb, sb.Capacity, out fileNameLength, out displacement);
                 sourceFileName = sb.ToString();
             }
         }
@@ -290,7 +289,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                 uint functionNameSize;
                 StringBuilder sb = new StringBuilder(Constants.MaxSymbolName);
 
-                dbgEngDll.Symbols.GetNameByOffset(address, sb, (uint)sb.Capacity, out functionNameSize, out displacement);
+                dbgEngDll.Symbols.GetNameByOffset(address, sb, sb.Capacity, out functionNameSize, out displacement);
                 functionName = sb.ToString();
             }
         }
@@ -302,12 +301,12 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
         /// <param name="arguments">if set to <c>true</c> only arguments will be returned.</param>
         public VariableCollection GetFrameLocals(StackFrame stackFrame, bool arguments)
         {
-            DebugScopeGroup scopeGroup = arguments ? DebugScopeGroup.Arguments : DebugScopeGroup.Locals;
+            DEBUG_SCOPE_GROUP scopeGroup = arguments ? DEBUG_SCOPE_GROUP.ARGUMENTS : DEBUG_SCOPE_GROUP.LOCALS;
 
             using (StackFrameSwitcher switcher = new StackFrameSwitcher(DbgEngDll.StateCache, stackFrame))
             {
                 IDebugSymbolGroup2 symbolGroup;
-                dbgEngDll.Symbols.GetScopeSymbolGroup2((uint)scopeGroup, null, out symbolGroup);
+                dbgEngDll.Symbols.GetScopeSymbolGroup2(scopeGroup, null, out symbolGroup);
                 uint localsCount = symbolGroup.GetNumberSymbols();
                 Variable[] variables = new Variable[localsCount];
                 for (uint i = 0; i < localsCount; i++)
@@ -315,7 +314,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                     StringBuilder name = new StringBuilder(Constants.MaxSymbolName);
                     uint nameSize;
 
-                    symbolGroup.GetSymbolName(i, name, (uint)name.Capacity, out nameSize);
+                    symbolGroup.GetSymbolName(i, name, name.Capacity, out nameSize);
                     var entry = symbolGroup.GetSymbolEntryInformation(i);
                     var module = stackFrame.Process.ModulesById[entry.ModuleBase];
                     var codeType = module.TypesById[entry.TypeId];
@@ -428,7 +427,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                 uint enumNameSize;
                 StringBuilder sb = new StringBuilder(Constants.MaxSymbolName);
 
-                dbgEngDll.Symbols.GetConstantNameWide(module.Offset, enumTypeId, enumValue, sb, (uint)sb.Capacity, out enumNameSize);
+                dbgEngDll.Symbols.GetConstantNameWide(module.Offset, enumTypeId, enumValue, sb, sb.Capacity, out enumNameSize);
                 return sb.ToString();
             }
         }
@@ -467,7 +466,7 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
                 ulong displacement;
                 uint nameSize;
 
-                dbgEngDll.Symbols.GetNameByOffsetWide(address, sb, (uint)sb.Capacity, out nameSize, out displacement);
+                dbgEngDll.Symbols.GetNameByOffsetWide(address, sb, sb.Capacity, out nameSize, out displacement);
                 return Tuple.Create(sb.ToString(), displacement);
             }
         }
@@ -487,14 +486,14 @@ namespace CsScriptManaged.Debuggers.DbgEngDllHelpers
         /// Gets the typed data.
         /// </summary>
         /// <param name="typedDataId">The typed data identifier.</param>
-        private static DEBUG_TYPED_DATA GetTypedData(Tuple<ulong, uint, ulong> typedDataId)
+        private static _DEBUG_TYPED_DATA GetTypedData(Tuple<ulong, uint, ulong> typedDataId)
         {
             var dbgEngDll = (DbgEngDll)Context.Debugger;
 
-            return dbgEngDll.Advanced.Request(DebugRequest.ExtTypedDataAnsi, new EXT_TYPED_DATA()
+            return dbgEngDll.Advanced.Request(DEBUG_REQUEST.EXT_TYPED_DATA_ANSI, new EXT_TYPED_DATA()
             {
-                Operation = ExtTdop.SetFromTypeIdAndU64,
-                InData = new DEBUG_TYPED_DATA()
+                Operation = _EXT_TDOP.EXT_TDOP_SET_FROM_TYPE_ID_AND_U64,
+                InData = new _DEBUG_TYPED_DATA()
                 {
                     ModBase = typedDataId.Item1,
                     TypeId = typedDataId.Item2,
